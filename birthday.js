@@ -68,6 +68,25 @@ const uline   = $('uline').querySelector('.uline__path');
 const bloom   = $('bloom');
 const replay  = $('replay');
 
+const scrollPrompt = $('scrollPrompt');
+const cakeContainer = $('cakeContainer');
+const letterSection = $('letterSection');
+const candle  = $('candle');
+const flame   = $('flame');
+const bgMusic = $('bgMusic');
+
+let musicStarted = false;
+function startMusic() {
+  if (musicStarted || !bgMusic) return;
+  musicStarted = true;
+  bgMusic.volume = 0.5;
+  bgMusic.play().catch(e => console.log("Audio play blocked by browser:", e));
+  document.removeEventListener('pointerdown', startMusic);
+  document.removeEventListener('keydown', startMusic);
+}
+document.addEventListener('pointerdown', startMusic);
+document.addEventListener('keydown', startMusic);
+
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isRecord     = new URLSearchParams(location.search).has('record');
 
@@ -872,23 +891,17 @@ function enter(){
 function armReplay(){
   replay.hidden = false;
   requestAnimationFrame(() => replay.classList.add('is-shown'));
-  document.body.classList.remove('no-scroll');
-  const sp = document.getElementById('scrollPrompt');
-  if (sp) sp.classList.add('is-shown');
+
+  // Unlock Act 5
+  document.querySelector('.scene').classList.add('scroll-unlocked');
+  scrollPrompt.classList.add('is-visible');
+  initAct5();
 }
 
 /* back to Act 1, ready to be drawn again */
 function resetAll(){
   treeStop();
   showWish(false);
-  document.body.classList.add('no-scroll');
-  const sp = document.getElementById('scrollPrompt');
-  if (sp) sp.classList.remove('is-shown');
-  const cc = document.getElementById('cakeContainer');
-  if (cc) cc.innerHTML = '';
-  const cs = document.getElementById('cakeSection');
-  if (cs) cs.classList.remove('is-blown', 'show-prompt', 'is-shifted');
-  if (typeof stopMic === 'function') stopMic();
   window.bdayDone = false; replayArmed = false;
   replay.classList.remove('is-shown'); replay.hidden = true;
   if (filmTL){ filmTL.pause(0); }
@@ -943,31 +956,64 @@ if (isRecord){
   };
 }
 
-/* ============================================================
-   SHINCHAN GAME LOGIC
-   ============================================================ */
-const cakeSection = document.getElementById('cakeSection');
+let act5Inited = false;
+function initAct5() {
+  if (act5Inited) return;
+  act5Inited = true;
 
-// Expose slide navigation globally
-window.goToSlide = function(slideNumber) {
-  // Hide all slides
-  const slides = document.querySelectorAll('.slide');
-  slides.forEach(s => s.classList.remove('active'));
-  
-  // Show target slide
-  const target = document.getElementById('slide-' + slideNumber);
-  if (target) {
-    target.classList.add('active');
-  }
-};
+  let blown = false;
 
-if (cakeSection) {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        cakeSection.classList.add('is-active');
-      }
+  const blowAction = () => {
+    if (blown) return;
+    blown = true;
+    flame.classList.add('is-blown');
+    setTimeout(() => {
+      cakeContainer.classList.add('is-moved');
+      letterSection.classList.add('is-visible');
+      scrollPrompt.classList.remove('is-visible');
+      $('cakeHint').style.opacity = 0;
+    }, 600);
+  };
+
+  // Fallback tap on candle
+  candle.addEventListener('click', blowAction);
+
+  // Microphone blow detection
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      const scriptProcessor = audioContext.createScriptProcessor(256, 1, 1);
+
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.fftSize = 1024;
+
+      microphone.connect(analyser);
+      analyser.connect(scriptProcessor);
+      scriptProcessor.connect(audioContext.destination);
+
+      scriptProcessor.onaudioprocess = function() {
+        if (blown) {
+          scriptProcessor.disconnect();
+          microphone.disconnect();
+          return;
+        }
+        const array = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(array);
+        let values = 0;
+        for (let i = 0; i < array.length; i++) {
+          values += array[i];
+        }
+        const average = values / array.length;
+        
+        // Threshold for "blowing"
+        if (average > 80) { 
+          blowAction();
+        }
+      };
+    }).catch((err) => {
+      console.log("Mic access denied, use fallback tap on candle.");
     });
-  }, { threshold: 0.3 });
-  observer.observe(cakeSection);
+  }
 }
