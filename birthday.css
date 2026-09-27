@@ -654,6 +654,82 @@ body{
   padding: 20px;
 }
 
+/* ============================================================
+   MOBILE RESPONSIVENESS
+   ============================================================ */
+@media (max-width: 768px) {
+  #slideGameContainer {
+    width: 95vw;
+    height: 90vh;
+    border-width: 8px;
+  }
+  .slide {
+    padding: 1em;
+  }
+  .slide h2, .slide h1 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  .shinchan-img, .cake-img {
+    max-width: 90%;
+    max-height: 30vh;
+  }
+  .btn-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .game-btn {
+    padding: 12px 30px;
+    font-size: 1.2rem;
+  }
+  .gifts-container {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+  }
+  .gift-box {
+    width: 80px;
+    height: 80px;
+  }
+  .card-layout {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .card-text h1 {
+    font-size: 1.5rem;
+  }
+  .card-text p {
+    font-size: 1rem;
+  }
+  .card-photo img {
+    width: 150px;
+    height: 200px;
+  }
+  .polaroid-container {
+    flex-direction: column;
+    gap: -10px;
+    margin: 10px 0;
+  }
+  .polaroid {
+    padding: 5px 5px 20px 5px;
+  }
+  .polaroid img {
+    width: 100px;
+    height: 100px;
+  }
+  .letter-content {
+    font-size: 1rem;
+    padding: 10px;
+  }
+  .back-btn {
+    top: 10px;
+    left: 10px;
+    padding: 5px 15px;
+    font-size: 0.9rem;
+  }
+}
+
+
 /* Scroll indicator */
 .scroll-prompt {
   position: absolute;
